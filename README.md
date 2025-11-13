@@ -2,9 +2,7 @@
 
 [![PHP Version](https://img.shields.io/packagist/php-v/gryfoss/symfony-unique-in-collection-constraint)](https://packagist.org/packages/gryfoss/symfony-unique-in-collection-constraint)
 [![Tests](https://github.com/GryfOSS/symfony-unique-in-collection-constraint/workflows/Tests/badge.svg)](https://github.com/GryfOSS/symfony-unique-in-collection-constraint/actions)
-[![Coverage Status](https://img.shields.io/codecov/c/github/GryfOSS/symfony-unique-in-collection-constraint)](https://codecov.io/gh/GryfOSS/symfony-unique-in-collection-constraint)
 [![Latest Stable Version](https://img.shields.io/packagist/v/gryfoss/symfony-unique-in-collection-constraint)](https://packagist.org/packages/gryfoss/symfony-unique-in-collection-constraint)
-[![License](https://img.shields.io/packagist/l/gryfoss/symfony-unique-in-collection-constraint)](https://github.com/GryfOSS/symfony-unique-in-collection-constraint/blob/main/LICENSE)
 
 A Symfony validation constraint that ensures uniqueness of specific fields within a collection. This constraint validates that the specified field(s) have unique values across all items in a collection, making it perfect for preventing duplicate entries based on certain properties.
 
