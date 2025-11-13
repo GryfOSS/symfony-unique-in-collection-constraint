@@ -1,0 +1,19 @@
+{
+    "name": "gryfoss/symfony-unique-in-collection-constraint",
+    "description": "Allows validation of objects inside a collection by a provided field.",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "GryfOSS\\SymfonyUniqueInCollectionConstraint\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "IDCT Bartosz Pachołek",
+            "email": "bartosz+github@idct.tech"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {}
+}
