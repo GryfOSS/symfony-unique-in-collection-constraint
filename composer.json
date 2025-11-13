@@ -8,6 +8,11 @@
             "GryfOSS\\SymfonyUniqueInCollectionConstraint\\": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "GryfOSS\\SymfonyUniqueInCollectionConstraint\\Tests\\": "tests/"
+        }
+    },
     "authors": [
         {
             "name": "IDCT Bartosz Pachołek",
@@ -15,5 +20,11 @@
         }
     ],
     "minimum-stability": "stable",
-    "require": {}
+    "require-dev": {
+        "phpunit/phpunit": "^12.4"
+    },
+    "require": {
+        "symfony/validator": "^7.3",
+        "symfony/property-access": "^7.3"
+    }
 }

@@ -22,11 +22,12 @@ use Symfony\Component\Validator\Constraint;
 #[Attribute()]
 class UniqueInCollection extends Constraint
 {
+    public const string FIELDS_ERROR = 'unique_in_collection';
     /**
      * The field(s) to check for uniqueness within the collection.
      * Can be a single field name (string) or an array of field names for composite uniqueness.
      */
-    protected ?array $fields = null;
+    public mixed $fields = null;
 
     /**
      * The error message to display when uniqueness validation fails.
@@ -40,6 +41,14 @@ class UniqueInCollection extends Constraint
     protected ?string $propertyPath = null;
 
     /**
+     * Return the name of the default option
+     */
+    public function getDefaultOption(): ?string
+    {
+        return 'fields';
+    }
+
+    /**
      * Constructor for the UniqueInCollection constraint.
      *
      * @param mixed $options The constraint options. Can be:
@@ -51,18 +60,10 @@ class UniqueInCollection extends Constraint
      */
     public function __construct(mixed $options = null, ?array $groups = null, ?string $propertyPath = null)
     {
-        parent::__construct($options, $groups);
-
+        // Set propertyPath before calling parent constructor
         $this->propertyPath = $propertyPath;
 
-        // Handle different option formats for field specification
-        if (is_array($options) && isset($options['fields'])) {
-            // Options array with 'fields' key
-            $this->fields = $options['fields'];
-        } elseif (is_string($options)) {
-            // Single field name as string - convert to array
-            $this->fields = [ $options ];
-        }
+        parent::__construct($options, $groups);
     }
 
     /**
@@ -72,6 +73,10 @@ class UniqueInCollection extends Constraint
      */
     public function getFields(): ?array
     {
+        if (is_string($this->fields)) {
+            return [$this->fields];
+        }
+
         return $this->fields;
     }
 
