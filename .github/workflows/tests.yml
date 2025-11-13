@@ -135,8 +135,8 @@ jobs:
           php bin/console cache:warmup --env=test --no-debug
 
       - name: Run Behat functional tests
-        working-directory: tests/functional
         run: |
+          cd tests/functional
           ./vendor/bin/behat --colors --strict --no-interaction -vvv
 
   test-summary:
