@@ -1,0 +1,161 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  COMPOSER_FLAGS: "--ansi --no-interaction --no-progress --prefer-dist"
+
+jobs:
+  unit-tests:
+    name: Unit Tests (PHP ${{ matrix.php }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        php: ['8.3', '8.4']
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: ctype, iconv, xdebug
+          coverage: xdebug
+          ini-values: memory_limit=-1
+          tools: composer:v2
+
+      - name: Validate composer.json and composer.lock
+        run: composer validate --strict
+
+      - name: Cache Composer packages
+        id: composer-cache
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: ${{ runner.os }}-php-${{ matrix.php }}-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-php-${{ matrix.php }}-
+
+      - name: Install dependencies
+        run: composer install ${{ env.COMPOSER_FLAGS }}
+
+      - name: Run unit tests with coverage
+        run: |
+          XDEBUG_MODE=coverage ./vendor/bin/phpunit --coverage-text --coverage-clover=coverage/clover.xml
+        env:
+          XDEBUG_MODE: coverage
+
+      - name: Check 100% test coverage
+        run: |
+          php -r "
+          \$xml = simplexml_load_file('coverage/clover.xml');
+          \$metrics = \$xml->project->metrics;
+          \$statements = (int)\$metrics['statements'];
+          \$coveredstatements = (int)\$metrics['coveredstatements'];
+          \$coverage = \$statements > 0 ? (\$coveredstatements / \$statements) * 100 : 100;
+          echo \"Coverage: \" . number_format(\$coverage, 2) . \"%\\n\";
+          if (\$coverage < 100) {
+              echo \"❌ Coverage is \" . number_format(\$coverage, 2) . \"%, but 100% is required\\n\";
+              exit(1);
+          }
+          echo \"✅ Coverage is 100%\\n\";
+          "
+
+      - name: Upload coverage reports (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report-php-${{ matrix.php }}
+          path: coverage/
+
+  functional-tests:
+    name: Functional Tests (PHP ${{ matrix.php }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        php: ['8.3', '8.4']
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: ctype, iconv
+          ini-values: memory_limit=-1
+          tools: composer:v2
+
+      - name: Cache Composer packages (main project)
+        id: composer-cache-main
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: ${{ runner.os }}-php-${{ matrix.php }}-main-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-php-${{ matrix.php }}-main-
+
+      - name: Install main project dependencies
+        run: composer install ${{ env.COMPOSER_FLAGS }}
+
+      - name: Cache Composer packages (functional tests)
+        id: composer-cache-functional
+        uses: actions/cache@v4
+        with:
+          path: tests/functional/vendor
+          key: ${{ runner.os }}-php-${{ matrix.php }}-functional-${{ hashFiles('tests/functional/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-php-${{ matrix.php }}-functional-
+
+      - name: Install functional test dependencies
+        working-directory: tests/functional
+        run: composer install ${{ env.COMPOSER_FLAGS }}
+
+      - name: Setup functional test environment
+        working-directory: tests/functional
+        run: |
+          # Copy environment file if it doesn't exist
+          if [ ! -f .env.local ]; then
+            cp .env .env.local
+          fi
+
+          # Clear cache
+          php bin/console cache:clear --env=test --no-debug
+
+          # Warm up cache
+          php bin/console cache:warmup --env=test --no-debug
+
+      - name: Run Behat functional tests
+        working-directory: tests/functional
+        run: |
+          ./vendor/bin/behat --colors --strict --no-interaction -vvv
+
+  test-summary:
+    name: Test Summary
+    runs-on: ubuntu-latest
+    needs: [unit-tests, functional-tests]
+    if: always()
+
+    steps:
+      - name: Check test results
+        run: |
+          if [[ "${{ needs.unit-tests.result }}" == "success" && "${{ needs.functional-tests.result }}" == "success" ]]; then
+            echo "✅ All tests passed successfully!"
+            echo "- Unit tests: ✅"
+            echo "- Coverage: ✅ 100%"
+            echo "- Functional tests: ✅"
+          else
+            echo "❌ Some tests failed:"
+            echo "- Unit tests: ${{ needs.unit-tests.result == 'success' && '✅' || '❌' }}"
+            echo "- Functional tests: ${{ needs.functional-tests.result == 'success' && '✅' || '❌' }}"
+            exit 1
+          fi
